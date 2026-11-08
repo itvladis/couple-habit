@@ -35,6 +35,47 @@ describe('habits', () => {
     expect((await app.views.myHabits(1, { archived: true })).map((h) => h.id)).toEqual([habit.id]);
   });
 
+  it('deletes an archived habit for everyone and tells the other members', async () => {
+    const { app, user, sharedHabit, sent } = setup();
+    await user(1, 'Влад');
+    await user(2, 'Маша');
+    const habit = await sharedHabit(1, 2);
+    await app.habits.archive(1, habit.id);
+    sent.length = 0;
+
+    await app.habits.delete(1, habit.id);
+
+    expect(await app.views.myHabits(1, { archived: true })).toEqual([]);
+    expect(await app.views.myHabits(2, { archived: true })).toEqual([]);
+    await expect(app.views.habit(2, habit.id)).rejects.toMatchObject({ code: 'not_found' });
+    expect(sent).toEqual([
+      expect.objectContaining({ type: 'habit_deleted', to: 2, habit: expect.objectContaining({ id: habit.id }), by: expect.objectContaining({ firstName: 'Влад' }) }),
+    ]);
+  });
+
+  it('deletes only archived habits, and only for the owner', async () => {
+    const { app, user, sharedHabit } = setup();
+    await user(1, 'Влад');
+    await user(2, 'Маша');
+    const habit = await sharedHabit(1, 2);
+
+    await expect(app.habits.delete(1, habit.id)).rejects.toMatchObject({ code: 'conflict' });
+    await app.habits.archive(1, habit.id);
+    await expect(app.habits.delete(2, habit.id)).rejects.toMatchObject({ code: 'forbidden' });
+    expect((await app.views.myHabits(1, { archived: true })).map((h) => h.id)).toEqual([habit.id]);
+  });
+
+  it('removes the habit from storage', async () => {
+    const { app, store, user } = setup();
+    await user(1, 'Влад');
+    const habit = await app.habits.create(1, DEFAULT_HABIT);
+    await app.habits.archive(1, habit.id);
+
+    await app.habits.delete(1, habit.id);
+
+    expect(await store.getHabit(habit.id)).toBeNull();
+  });
+
   it('transfers ownership only to a current member', async () => {
     const { app, user, sharedHabit, sent } = setup();
     await user(1, 'Влад');

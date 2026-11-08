@@ -190,6 +190,19 @@ describe('habits', () => {
     expect(res.json.error.code).toBe('forbidden');
   });
 
+  it('deletes an archived habit with DELETE /habits/:id', async () => {
+    const { call, auth } = setup();
+    const vlad = auth(1, 'Влад');
+    await call('POST', '/session', vlad, { timeZone: 'Europe/Samara' });
+    const created = await call('POST', '/habits', vlad, HABIT);
+    const id = created.json.data.id;
+
+    expect((await call('DELETE', `/habits/${id}`, vlad)).status).toBe(409);
+    await call('POST', `/habits/${id}/archive`, vlad);
+    expect((await call('DELETE', `/habits/${id}`, vlad)).status).toBe(204);
+    expect((await call('GET', `/habits/${id}`, vlad)).status).toBe(404);
+  });
+
   it('returns heatmap data for a date range', async () => {
     const { call, auth } = setup();
     const vlad = auth(1, 'Влад');

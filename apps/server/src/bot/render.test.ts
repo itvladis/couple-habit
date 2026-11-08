@@ -51,6 +51,16 @@ describe('renderNotification', () => {
     expect(buttons(r)).toEqual(['ra:22222222-2222-4222-8222-222222222222', 'rd:22222222-2222-4222-8222-222222222222']);
   });
 
+  it('tells members a habit was deleted, without a link into it', () => {
+    const n: Notification = { type: 'habit_deleted', to: 2, habit, by: masha };
+
+    const r = renderNotification(n, TEXTS.ru, APP);
+
+    expect(r.text).toContain('удалил');
+    expect(r.text).toContain('Зал &lt;вместе&gt;');
+    expect(opens(r)[0]).not.toContain('h_');
+  });
+
   it('summarizes the week with streak units', () => {
     const n: Notification = {
       type: 'weekly_summary', to: 1, weekStart: '2026-11-02',

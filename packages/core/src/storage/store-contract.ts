@@ -257,6 +257,43 @@ export function describeStoreContract(name: string, create: () => Promise<Store>
       expect((await store.listEvents([a, b], e2.id, 10)).map((e) => e.id)).toEqual([e1.id]);
     });
 
+    it('deletes a habit with everything that belongs to it and nothing else', async () => {
+      const store = await create();
+      const [owner, friend] = [uid(), uid()];
+      const gone = habit(owner);
+      const kept = habit(owner);
+      for (const h of [gone, kept]) {
+        await store.saveHabit(h);
+        await store.saveMembership(membership(h.id, owner));
+        await store.saveMembership(membership(h.id, friend));
+        await store.insertCheck({ habitId: h.id, userId: friend, date: '2026-11-07', createdAt: now });
+        await store.saveInviteLink({ token: sid(), ownerId: owner, habitId: h.id, createdAt: now, revokedAt: null });
+      }
+      const friendLink: InviteLink = { token: sid(), ownerId: owner, habitId: null, createdAt: now, revokedAt: null };
+      await store.saveInviteLink(friendLink);
+      const goneRequest = request(friend, owner, { type: 'habit_join', habitId: gone.id });
+      const keptRequest = request(friend, owner, { type: 'habit_join', habitId: kept.id });
+      for (const r of [goneRequest, keptRequest]) await store.insertPendingRequest(r);
+      const goneEvents = [event(owner, { habitId: gone.id }), event(friend, { type: 'check', habitId: gone.id, date: '2026-11-07' })];
+      const keptEvents = [event(owner, { habitId: kept.id }), event(owner, { type: 'friendship', otherUserId: friend })];
+      for (const e of [...goneEvents, ...keptEvents]) await store.saveEvent(e);
+
+      await store.deleteHabit(gone.id);
+
+      expect(await store.getHabit(gone.id)).toBeNull();
+      expect(await store.listMembersOfHabit(gone.id)).toEqual([]);
+      expect(await store.listChecks(gone.id)).toEqual([]);
+      expect(await store.findActiveInviteLink(owner, gone.id)).toBeNull();
+      expect(await store.getRequest(goneRequest.id)).toBeNull();
+      expect((await store.listMembershipsOfUser(friend)).map((m) => m.habitId)).toEqual([kept.id]);
+      expect(await store.getHabit(kept.id)).toEqual(kept);
+      expect(await store.listChecks(kept.id)).toHaveLength(1);
+      expect(await store.findActiveInviteLink(owner, kept.id)).not.toBeNull();
+      expect(await store.findActiveInviteLink(owner, null)).toEqual(friendLink);
+      expect(await store.getRequest(keptRequest.id)).not.toBeNull();
+      expect((await store.listEvents([owner, friend], null, 10)).map((e) => e.id).sort()).toEqual(keptEvents.map((e) => e.id).sort());
+    });
+
     it('deletes only the matching check events', async () => {
       const store = await create();
       const a = uid();
