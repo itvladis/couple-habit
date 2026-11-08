@@ -1,0 +1,15 @@
+{
+  "name": "@habit/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./deep-links": "./src/deep-links.ts",
+    "./dates": "./src/domain/dates.ts",
+    "./store-contract": "./src/storage/store-contract.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}
