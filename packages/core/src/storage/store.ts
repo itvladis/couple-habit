@@ -16,6 +16,8 @@ export interface Store {
   getHabit(id: string): Promise<Habit | null>;
   getHabits(ids: readonly string[]): Promise<Habit[]>;
   saveHabit(habit: Habit): Promise<void>;
+  /** Removes the habit with its memberships, checks, invite links, requests and feed events. */
+  deleteHabit(id: string): Promise<void>;
 
   getMembership(habitId: string, userId: number): Promise<Membership | null>;
   listMembersOfHabit(habitId: string): Promise<Membership[]>;

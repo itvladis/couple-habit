@@ -29,6 +29,7 @@ export type Notification =
   | { type: 'request_created'; to: number; requestId: string; requestType: RequestType; from: UserRef; habit: HabitRef | null }
   | { type: 'request_approved'; to: number; requestType: RequestType; by: UserRef; habit: HabitRef | null }
   | { type: 'ownership_received'; to: number; habit: HabitRef; from: UserRef }
+  | { type: 'habit_deleted'; to: number; habit: HabitRef; by: UserRef }
   /** `time` is the reminder's local "HH:MM": the set time, or the minute picked inside a window. */
   | { type: 'reminder'; to: number; habit: HabitRef; date: LocalDate; time: string }
   | {

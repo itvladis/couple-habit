@@ -219,6 +219,17 @@ export class YdbStore implements Store {
     return this.updateMembership(habitId, userId, (m) => ({ ...m, lastCheckNotice: notice }));
   }
 
+  async deleteHabit(id: string) {
+    await this.sql.begin(async (tx) => {
+      await tx`DELETE FROM ${this.t('habits')} WHERE id = ${id}`;
+      await tx`DELETE FROM ${this.t('memberships')} WHERE habit_id = ${id}`;
+      await tx`DELETE FROM ${this.t('checks')} WHERE habit_id = ${id}`;
+      await tx`DELETE FROM ${this.t('invite_links')} WHERE habit_key = ${id}`;
+      await tx`DELETE FROM ${this.t('requests')} WHERE habit_key = ${id}`;
+      await tx`DELETE FROM ${this.t('events')} WHERE habit_id = ${id}`;
+    });
+  }
+
   async deleteMembership(habitId: string, userId: number) {
     await this.sql`DELETE FROM ${this.t('memberships')} WHERE habit_id = ${habitId} AND user_id = ${key(userId)}`;
   }

@@ -38,6 +38,8 @@ function body(n: Notification, t: Texts): { text: string; quick?: InlineKeyboard
       };
     case 'ownership_received':
       return { text: t.ownershipReceived(n.habit.title, n.from.firstName), opens: { screen: 'habit', habitId: n.habit.id } };
+    case 'habit_deleted':
+      return { text: t.habitDeleted(n.habit.title, n.by.firstName), opens: { screen: 'home' } };
     case 'reminder':
       return {
         text: t.reminder(n.habit.title, n.time),

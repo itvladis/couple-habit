@@ -144,6 +144,18 @@ export class MemoryStore implements Store {
     membership.lastCheckNotice = copy(notice);
     this.changed();
   }
+  async deleteHabit(id: string) {
+    this.habits.delete(id);
+    const drop = <K, V extends { habitId: string | null }>(map: Map<K, V>) => {
+      for (const [key, value] of map) if (value.habitId === id) map.delete(key);
+    };
+    drop(this.memberships);
+    drop(this.checks);
+    drop(this.inviteLinks);
+    drop(this.requests);
+    this.events = this.events.filter((e) => e.habitId !== id);
+    this.changed();
+  }
   async deleteMembership(habitId: string, userId: number) {
     this.memberships.delete(memberKey(habitId, userId));
     this.changed();

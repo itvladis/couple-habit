@@ -24,6 +24,7 @@ export interface Texts {
   accepted: string;
   declined: string;
   ownershipReceived(habit: string, from: string): string;
+  habitDeleted(habit: string, by: string): string;
   reminder(habit: string, time: string): string;
   weeklyTitle(range: string): string;
   weeklyLine(habit: string, done: number, target: number, streak: number, unit: 'day' | 'week'): string;
@@ -58,6 +59,7 @@ const ru: Texts = {
   accepted: 'Принято ✓',
   declined: 'Отклонено',
   ownershipReceived: (habit, from) => `${b(from)} передаёт тебе привычку «${esc(habit)}» — теперь ты владелец.`,
+  habitDeleted: (habit, by) => `${b(by)} удалил привычку «${esc(habit)}» вместе со всеми отметками.`,
   reminder: (habit, time) => `⏰ Напоминание: «${esc(habit)}» в ${time}`,
   weeklyTitle: (range) => `📊 Итоги недели · ${range}`,
   weeklyLine: (habit, done, target, streak, unit) =>
@@ -101,6 +103,7 @@ const en: Texts = {
   accepted: 'Accepted ✓',
   declined: 'Declined',
   ownershipReceived: (habit, from) => `${b(from)} hands “${esc(habit)}” over to you — you are the owner now.`,
+  habitDeleted: (habit, by) => `${b(by)} deleted “${esc(habit)}” along with all its check-ins.`,
   reminder: (habit, time) => `⏰ Reminder: “${esc(habit)}” at ${time}`,
   weeklyTitle: (range) => `📊 Your week · ${range}`,
   weeklyLine: (habit, done, target, streak, unit) =>

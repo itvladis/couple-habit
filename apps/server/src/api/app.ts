@@ -165,6 +165,10 @@ export function createApi(config: ApiConfig) {
     const habit = await app.habits.unarchive(userId, c.req.param('id'));
     return c.json({ data: await app.views.habit(userId, habit.id) });
   });
+  api.delete('/habits/:id', async (c) => {
+    await app.habits.delete(c.get('userId'), c.req.param('id'));
+    return c.body(null, 204);
+  });
   api.post('/habits/:id/transfer', async (c) => {
     const userId = c.get('userId');
     const { userId: newOwnerId } = parse(transferSchema, await jsonBody(c));

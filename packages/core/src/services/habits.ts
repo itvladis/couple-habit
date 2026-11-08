@@ -104,6 +104,18 @@ export class HabitsService {
     return updated;
   }
 
+  /** Gone for everyone, with all checks. Only archived habits, so one tap cannot wipe an active streak. */
+  async delete(userId: number, habitId: string): Promise<void> {
+    const habit = await this.ownedHabit(userId, habitId);
+    if (!habit.archivedAt) throw conflict('archive the habit before deleting it');
+    const owner = await this.ctx.requireUser(userId);
+    const others = (await this.ctx.store.listMembersOfHabit(habitId)).filter((m) => m.userId !== userId);
+    await this.ctx.store.deleteHabit(habitId);
+    for (const member of others) {
+      await this.ctx.notify({ type: 'habit_deleted', to: member.userId, habit: habitRef(habit), by: userRef(owner) });
+    }
+  }
+
   async transferOwnership(userId: number, habitId: string, newOwnerId: number): Promise<Habit> {
     const habit = await this.ownedHabit(userId, habitId);
     if (newOwnerId === userId) return habit;
