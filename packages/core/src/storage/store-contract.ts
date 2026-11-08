@@ -279,6 +279,7 @@ export function describeStoreContract(name: string, create: () => Promise<Store>
       for (const e of [...goneEvents, ...keptEvents]) await store.saveEvent(e);
 
       await store.deleteHabit(gone.id);
+      await store.deleteHabit(sid()); // unknown ids are fine: a retried request may delete twice
 
       expect(await store.getHabit(gone.id)).toBeNull();
       expect(await store.listMembersOfHabit(gone.id)).toEqual([]);

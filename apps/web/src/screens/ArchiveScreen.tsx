@@ -29,9 +29,10 @@ export function ArchiveScreen() {
     onSuccess: (_d, id) => {
       client.removeQueries({ queryKey: qk.habit(id) });
       client.removeQueries({ queryKey: ['checks', id] });
-      invalidateHabits(client);
     },
     onError: (error) => toast(errorText(error, t)),
+    // Also on error: if someone else already deleted it, the stale row should go away.
+    onSettled: () => invalidateHabits(client),
   });
   return (
     <Screen onBack={nav.back}>
@@ -70,7 +71,7 @@ export function ArchiveScreen() {
                     aria-label={t.archive.delete}
                     disabled={restore.isPending || remove.isPending}
                     onClick={() => deleting.show(h)}
-                    className="press -mr-1 grid size-9 place-items-center rounded-xl text-[var(--h-coral)] disabled:opacity-50"
+                    className="press -mr-2 ml-1 grid size-11 place-items-center rounded-xl text-[var(--h-coral)] disabled:opacity-50"
                   >
                     <Trash2 size={18} aria-hidden />
                   </button>
@@ -90,7 +91,7 @@ export function ArchiveScreen() {
             </span>
           )
         }
-        actions={[{ label: t.archive.delete, destructive: true, onSelect: () => deleting.item && remove.mutate(deleting.item.id) }]}
+        actions={[{ label: t.archive.delete, destructive: true, onSelect: () => deleting.item && !remove.isPending && remove.mutate(deleting.item.id) }]}
       />
     </Screen>
   );

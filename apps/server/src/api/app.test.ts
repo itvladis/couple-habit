@@ -199,6 +199,7 @@ describe('habits', () => {
 
     expect((await call('DELETE', `/habits/${id}`, vlad)).status).toBe(409);
     await call('POST', `/habits/${id}/archive`, vlad);
+    expect((await call('DELETE', `/habits/${id}`, auth(2, 'Маша'))).status).toBe(404);
     expect((await call('DELETE', `/habits/${id}`, vlad)).status).toBe(204);
     expect((await call('GET', `/habits/${id}`, vlad)).status).toBe(404);
   });

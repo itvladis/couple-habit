@@ -65,15 +65,18 @@ describe('habits', () => {
     expect((await app.views.myHabits(1, { archived: true })).map((h) => h.id)).toEqual([habit.id]);
   });
 
-  it('removes the habit from storage', async () => {
-    const { app, store, user } = setup();
+  it('removes a personal habit from storage without messaging anyone', async () => {
+    const { app, store, user, sent } = setup();
     await user(1, 'Влад');
     const habit = await app.habits.create(1, DEFAULT_HABIT);
     await app.habits.archive(1, habit.id);
+    sent.length = 0;
 
     await app.habits.delete(1, habit.id);
 
     expect(await store.getHabit(habit.id)).toBeNull();
+    expect(sent).toEqual([]);
+    await expect(app.habits.delete(1, habit.id)).rejects.toMatchObject({ code: 'not_found' });
   });
 
   it('transfers ownership only to a current member', async () => {
