@@ -1,0 +1,23 @@
+{
+  "name": "@habit/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "start": "tsx --env-file-if-exists=../../.env src/main.ts",
+    "initdata": "tsx --env-file-if-exists=../../.env src/dev/initdata.ts",
+    "build:cloud": "tsx build-cloud.ts"
+  },
+  "dependencies": {
+    "@habit/core": "0.1.0",
+    "@hono/node-server": "^2.1.6",
+    "@ydbjs/auth": "^6.3.1",
+    "@ydbjs/core": "^6.3.1",
+    "@ydbjs/query": "^6.3.0",
+    "@ydbjs/value": "^6.0.8",
+    "grammy": "^1.46.0",
+    "hono": "^4.13.17",
+    "zod": "^4.6.7"
+  }
+}
