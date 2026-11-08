@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Tokens copied from the Figma variables "Theme / Light" and "Theme / Dark". */
+:root,
+[data-theme="light"] {
+  --base: #f2f1f7;
+  --surface: #ffffff;
+  --surface-2: #e9e8f0;
+  --line: rgb(0 0 0 / 0.06);
+  --selected: #ffffff;
+  --ink: #111114;
+  --ink-2: rgb(60 60 67 / 0.6);
+  --ink-3: rgb(60 60 67 / 0.32);
+  --tabbar: rgb(255 255 255 / 0.72);
+  --shadow: rgb(26 26 51 / 0.1);
+  --tint-top: 2%;
+  --tint-bottom: 14%;
+  --h-coral: #e0573c;
+  --h-gold: #b8890f;
+  --h-green: #2f9e55;
+  --h-lavender: #6e66f2;
+  --h-mint: #1fa894;
+  --h-peach: #c77b33;
+  --h-pink: #d9508c;
+  --h-sky: #3b7be0;
+  --on-accent: #ffffff;
+}
+
+[data-theme="dark"] {
+  --base: #0a0a0b;
+  --surface: #1a1a1d;
+  --surface-2: #26262a;
+  --line: rgb(255 255 255 / 0.08);
+  --selected: #5b5b61;
+  --ink: #f5f5f7;
+  --ink-2: rgb(235 235 245 / 0.56);
+  --ink-3: rgb(235 235 245 / 0.32);
+  --tabbar: rgb(28 28 31 / 0.72);
+  --shadow: rgb(0 0 0 / 0.35);
+  --tint-top: 4%;
+  --tint-bottom: 26%;
+  --h-coral: #ff9f8a;
+  --h-gold: #f5d27a;
+  --h-green: #8ee3a5;
+  --h-lavender: #a9a4ff;
+  --h-mint: #7fe0d0;
+  --h-peach: #f2c9a0;
+  --h-pink: #f49ac1;
+  --h-sky: #8fb8ff;
+  --on-accent: #0a0a0b;
+}
+
+@theme inline {
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-selected: var(--selected);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-tabbar: var(--tabbar);
+  --color-on-accent: var(--on-accent);
+  /* The current habit's color, set per element with style={{ '--hc': ... }}. */
+  --color-hc: var(--hc);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Telegram safe areas: system (notch, home bar) plus its own header in fullscreen mode. */
+:root {
+  --safe-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px));
+}
+
+/* Mobile baseline: no tap flash, no font inflation, no page rubber-band behind our own scrolling. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  background: var(--base);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--base);
+  overscroll-behavior: none;
+}
+
+/* iOS zooms into inputs below 16px. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* Controls are not content: no text selection or callout on long-press, no double-tap delay. */
+button,
+[role="button"],
+a {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Press feedback from the motion spec: scale(0.97), 120 ms, on pointer-down. */
+.press {
+  transition: transform 120ms var(--ease-out-quint), opacity 120ms var(--ease-out-quint);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active {
+    transform: none;
+    opacity: 0.7;
+  }
+}
