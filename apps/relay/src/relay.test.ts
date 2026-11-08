@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { relay, type RelayEnv } from './relay';
 
 const RELAY_SECRET = 'r'.repeat(43);
-const TOKEN = '123456:AAbbCCddEEffGGhhIIjjKKllMMnnOOppQQr';
+// Fake, and assembled at runtime so secret scanners don't mistake it for a real bot token.
+const TOKEN = ['123456', 'AAbbCCddEEffGGhhIIjjKKllMMnnOOppQQr'].join(':');
 const env: RelayEnv = { ORIGIN_WEBHOOK_URL: 'https://gateway.example/bot/webhook', RELAY_SECRET };
 
 interface Call {
