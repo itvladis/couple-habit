@@ -1,0 +1,12 @@
+{
+  "name": "@habit/relay",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker that carries Bot API traffic between Telegram and the Yandex Cloud backend",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.152.0"
+  }
+}

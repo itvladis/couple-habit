@@ -1,0 +1,9 @@
+{
+  // Telegram relay: Bot API traffic between Telegram and Yandex Cloud, which cannot reach each other directly.
+  // ORIGIN_WEBHOOK_URL is passed by scripts/deploy.ts (--var); RELAY_SECRET is a Worker secret.
+  "name": "habit-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false
+}
