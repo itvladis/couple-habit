@@ -125,6 +125,7 @@ export const api = {
   updateHabit: (id: string, patch: Partial<HabitInput>) => call<HabitView>('PATCH', `/habits/${id}`, patch),
   archive: (id: string) => call<HabitView>('POST', `/habits/${id}/archive`),
   unarchive: (id: string) => call<HabitView>('POST', `/habits/${id}/unarchive`),
+  deleteHabit: (id: string) => call<void>('DELETE', `/habits/${id}`),
   transfer: (id: string, userId: number) => call<HabitView>('POST', `/habits/${id}/transfer`, { userId }),
   updateMembership: (id: string, patch: MembershipSettings) => call<MembershipSettings>('PATCH', `/habits/${id}/membership`, patch),
   leave: (id: string) => call<void>('DELETE', `/habits/${id}/membership`),

@@ -200,7 +200,16 @@ const ru = {
     openHabit: 'Открыть привычку',
     toHome: 'На главную',
   },
-  archive: { title: 'Архив', empty: 'В архиве пусто', restore: 'Вернуть' },
+  archive: {
+    title: 'Архив',
+    empty: 'В архиве пусто',
+    restore: 'Вернуть',
+    delete: 'Удалить навсегда',
+    deleteConfirm: (title: string, shared: boolean) =>
+      shared
+        ? `Удалить «${title}» навсегда? Привычка и все отметки пропадут у всех участников, вернуть её не получится.`
+        : `Удалить «${title}» навсегда? Все отметки пропадут, вернуть её не получится.`,
+  },
 };
 
 export type Dict = typeof ru;
@@ -391,7 +400,16 @@ const en: Dict = {
     openHabit: 'Open habit',
     toHome: 'Go home',
   },
-  archive: { title: 'Archive', empty: 'Nothing archived', restore: 'Restore' },
+  archive: {
+    title: 'Archive',
+    empty: 'Nothing archived',
+    restore: 'Restore',
+    delete: 'Delete forever',
+    deleteConfirm: (title: string, shared: boolean) =>
+      shared
+        ? `Delete “${title}” forever? The habit and all check-ins disappear for every member. This can’t be undone.`
+        : `Delete “${title}” forever? All check-ins disappear. This can’t be undone.`,
+  },
 };
 
 export const DICTS: Record<Lang, Dict> = { ru, en };
