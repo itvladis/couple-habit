@@ -92,7 +92,7 @@ describe('bot', () => {
     await message(1, 'Влад', '/start');
 
     const reply = last('sendMessage')!;
-    expect(reply.text).toContain('Привет, Влад!');
+    expect(reply.text).toBe('Привет, Влад! 👋\n\nЭто трекер привычек для тебя и друзей: отмечайте привычки вместе и держите серию.');
     expect(JSON.stringify(reply.reply_markup)).toContain('https://app.example');
   });
 

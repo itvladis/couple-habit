@@ -35,8 +35,7 @@ export interface Texts {
 const ru: Texts = {
   locale: 'ru-RU',
   welcome: (name) =>
-    `Привет, ${esc(name)}! 👋\n\nЭто трекер привычек для тебя и друзей: отмечайте привычки вместе и держите серию. ` +
-    'Всё происходит в приложении, а здесь я буду присылать напоминания и новости от друзей.',
+    `Привет, ${esc(name)}! 👋\n\nЭто трекер привычек для тебя и друзей: отмечайте привычки вместе и держите серию.`,
   welcomeNoApp: 'Приложение скоро появится.',
   openApp: 'Открыть трекер',
   open: 'Открыть',
@@ -79,8 +78,7 @@ const ru: Texts = {
 const en: Texts = {
   locale: 'en-US',
   welcome: (name) =>
-    `Hi, ${esc(name)}! 👋\n\nThis is a habit tracker for you and your friends: check habits off together and keep the streak. ` +
-    "Everything happens in the app; here I'll send reminders and news from friends.",
+    `Hi, ${esc(name)}! 👋\n\nThis is a habit tracker for you and your friends: check habits off together and keep the streak.`,
   welcomeNoApp: 'The app is coming soon.',
   openApp: 'Open tracker',
   open: 'Open',
