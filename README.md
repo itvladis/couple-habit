@@ -1,90 +1,118 @@
-# Habit Tracker for Telegram
+# couple-habit
 
-A Telegram bot + Mini App for tracking habits together with friends: shared habits where the day counts when **everyone** (or **anyone**) checks in, streaks, a friends feed, reminders and a weekly summary.
+A habit tracker that lives inside Telegram. Track habits on your own or together with friends, keep your streaks going and see when others check in.
 
-> Status: deployed to Yandex Cloud (serverless). Bot, Mini App and API run from one API Gateway.
+It's a Telegram bot plus a Mini App (a small web app that opens right in the chat), running on Yandex Cloud.
 
-## Features
+## Screenshots
 
-- **Habits**: daily, specific weekdays or *N times a week*; personal or shared with friends; archive instead of delete.
-- **Shared habits**: the owner picks whether a day counts when all members check in or when any of them does. Members who joined later are only required from the day they joined.
-- **Streaks** per frequency type: days in a row, scheduled days in a row, or weeks in a row that hit the target. Today and the current week never break a streak before they end.
-- **Time zones**: every user lives in their own; checks are stored as the user's local date.
-- **Friends & invites**: an invite link opens the Mini App on an invite screen; tapping *Join* sends a request that the link owner approves. Owners can also invite an existing friend directly.
-- **Everything happens in the Mini App.** The bot has no commands besides `/start`: it delivers notifications (a friend checked in, requests, reminders at an exact time or a random minute inside a window, weekly summary) with quick buttons (*Check mine too*, *Accept*) and an *Open* button that lands on the matching screen.
-- **RU / EN** by the Telegram language, with a manual override.
+Made-up demo data. GitHub shows the dark or light version depending on your theme.
 
-## Architecture
+<table>
+  <tr>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.png"><img src="docs/screenshots/home-light.png" alt="Home: shared and personal habits" width="260"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/habit-dark.png"><img src="docs/screenshots/habit-light.png" alt="Habit: streak, stats and a 6-month heatmap" width="260"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/new-habit-dark.png"><img src="docs/screenshots/new-habit-light.png" alt="New habit: icon, color, schedule, friends" width="260"></picture></td>
+  </tr>
+  <tr>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/feed-dark.png"><img src="docs/screenshots/feed-light.png" alt="Feed: what you and your friends checked" width="260"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/profile-dark.png"><img src="docs/screenshots/profile-light.png" alt="Profile: requests, friends, settings" width="260"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/invite-dark.png"><img src="docs/screenshots/invite-light.png" alt="Invite a friend into a habit" width="260"></picture></td>
+  </tr>
+</table>
+
+## What it does
+
+- Habits can be daily, on certain days of the week, or a set number of times per week.
+- A habit can be just yours or shared with friends. For a shared one, the owner picks when a day counts: when everyone checks in, or when anyone does. People who join later only count from the day they joined.
+- Streaks work for every kind of schedule. Today doesn't break your streak until the day is actually over.
+- Everyone has their own time zone, so "today" always means your today.
+- To add a friend, send them a link. They tap Join, you approve. You can also invite a friend straight into a habit.
+- Everything happens in the app. The bot only has `/start` and sends notifications: a friend checked in, a new request, a reminder, a weekly summary. They come with quick buttons like "Check mine too" and "Accept".
+- Reminders go off at a set time or at a random minute inside a time range.
+- Russian and English. The language follows Telegram, and you can change it in settings.
+
+## How it's built
 
 ```
-packages/core      domain logic, services, storage interface (no Telegram, no HTTP)
-  domain/          pure functions: dates & time zones, schedules, completion, streaks, reminders
-  services/        use cases: habits, checks, social (friends, links, requests), feed, views, jobs
-  storage/         Store interface + in-memory implementation
-apps/web           Telegram Mini App: React 19, Vite, Tailwind v4, Motion, TanStack Query
-apps/relay         Cloudflare Worker that carries Bot API traffic (Telegram is blocked from Russian data centres)
-apps/server        adapters
-  api/             Hono REST API, Telegram Mini App init-data auth, rate limiting
-  bot/             grammY bot, notification rendering and delivery
-  storage/         JSON file (local), JSON snapshot in Object Storage (cloud), YDB adapter
-  cloud/           Cloud Function entry points: HTTP handler and the minute timer
-scripts/deploy.ts  idempotent Yandex Cloud deploy (yc CLI)
+packages/core   the app logic: dates, schedules, streaks, habits, friends, feed
+apps/web        the Mini App
+apps/server     REST API, Telegram bot, storage, cloud functions
+apps/relay      Cloudflare Worker that passes messages between Telegram and the server
+scripts         deploy, demo data, screenshots
 ```
 
-Core never imports Telegram or HTTP code, so the same services run under long polling locally and in serverless functions in the cloud.
+The core knows nothing about Telegram or HTTP, so the same code runs on a laptop and in the cloud.
 
-## Deploy (Yandex Cloud)
+## Deploy
+
+Everything runs on Yandex Cloud and fits in the free tier for a few people.
 
 ```
-Telegram ──webhook──▶ relay (Cloudflare Worker) ──▶ API Gateway /bot/webhook ──▶ habit-api ──▶ data bucket
-Mini App ──https──────────────────────────────────▶ API Gateway /, /api/* ─────▶ web bucket, habit-api
-Timer (every minute) ─────────────────────────────────────────────────────────▶ habit-tick ──▶ data bucket
-habit-api, habit-tick ──Bot API──▶ relay ──▶ api.telegram.org
+Telegram ──▶ relay ──▶ API Gateway ──▶ habit-api ──▶ data bucket
+Mini App ─────────────▶ API Gateway ──▶ web bucket + habit-api
+timer, every minute ──────────────────▶ habit-tick ──▶ data bucket
+habit-api, habit-tick ──▶ relay ──▶ Telegram
 ```
 
-**Why the relay.** Telegram and Russian data centres cannot reach each other (blocked both ways), while users in Russia reach Yandex Cloud fine. So the Mini App, API and data stay in Yandex Cloud, and only Bot API traffic goes through a tiny Cloudflare Worker (`apps/relay`): `POST /webhook` forwards updates with Telegram's secret header, `/<RELAY_SECRET>/bot<token>/<method>` forwards Bot API calls to api.telegram.org and nothing else, so it is not an open proxy.
+### Why there's a relay
 
-Requirements: [yc CLI](https://yandex.cloud/docs/cli/quickstart) after `yc init`, a cloud with an active billing account, a free Cloudflare account after `npx wrangler login`, `BOT_TOKEN` in `.env`.
+Right now Telegram's servers and Russian data centers can't reach each other, it's blocked both ways. People in Russia still reach Yandex Cloud fine. So the Mini App, the API and the data stay in Yandex Cloud, and only the bot's messages go through a small Cloudflare Worker. It forwards Telegram's updates to the server and the server's calls back to Telegram. Nothing else gets through, so nobody can use it as a free proxy.
+
+### Running it
+
+You'll need:
+
+- the [yc CLI](https://yandex.cloud/docs/cli/quickstart) set up with `yc init`, and a cloud with billing turned on
+- a free Cloudflare account, logged in with `npx wrangler login`
+- `BOT_TOKEN` in `.env`
 
 ```bash
 npm run deploy
 ```
 
-The script is idempotent: it creates what is missing and updates the rest — service account, buckets, functions, gateway, relay Worker, timer, then the Telegram webhook (with a secret token, pointing at the relay) and the menu button. Everything fits the free tier for a few users.
+It's safe to run again and again: it creates what's missing and updates the rest (service account, buckets, functions, API Gateway, relay, timer, webhook, menu button).
 
-- **Data.** One JSON snapshot in a private, versioned bucket in its own folder (`habit-tracker-data`); old versions are kept 30 days for rollback. Every invocation runs as a transaction: load, run, save with `If-Match`; on a concurrent write the work is rerun on fresh data, so no change is lost (`apps/server/src/storage/snapshot-store.ts`). The same Store contract tests run against it.
-- **YDB.** A YDB adapter exists (`storage/ydb.ts`, `DEPLOY_STORAGE=ydb npm run deploy`). Serverless YDB currently times out compiling any query that reads a table, even in a fresh database, so the snapshot store is the default.
-- **Least privilege.** The service account can read storage in the app folder, upload only in the data folder, and invoke only the two functions. Requests without a webhook secret or Telegram init data are answered before any data is read.
-- **Secrets.** `BOT_TOKEN`, the webhook secret and the relay path live in function environment variables (the relay secret also as a Worker secret); both secrets are generated once into `.data/deploy.json` (git-ignored, mode 600). Deploy errors are printed with secrets masked.
+After the first deploy, open @BotFather and set the printed URL as the bot's Main Mini App. Without it, invite links (`t.me/<bot>?startapp=...`) won't open the app.
 
-After deploying, set the printed URL as the bot's **Main Mini App** in @BotFather so `t.me/<bot>?startapp=...` links work.
+### Where the data lives
 
-While the webhook is set, `npm run dev` serves only the local API: it does not poll, does not change the bot's menu and sends no reminders. `BOT_POLLING=force npm run dev` takes the bot back for local work (it deletes the webhook; run `npm run deploy` to restore it).
+All the data is one JSON file in a private bucket. Each request loads it, makes its changes and saves it back, but only if nobody saved in between. If someone did, the request runs again on the fresh data, so two people checking in at the same moment never overwrite each other. Old versions are kept for 30 days, just in case.
+
+There's also a YDB version (`DEPLOY_STORAGE=ydb npm run deploy`). Right now serverless YDB times out on any query that reads a table, even in a brand new database, so the JSON file is the default.
+
+### Security
+
+- The cloud account can only read the app's files, write to the data folder and call its own two functions.
+- Requests without Telegram's signature or the webhook secret are turned away before any data is loaded.
+- Secrets are made once and saved to `.data/deploy.json`, which isn't in git. If the deploy fails, the error hides them.
+
+While the webhook is set, `npm run dev` only runs the local API. It won't grab the bot, change its menu or send reminders. To work on the bot locally, run `BOT_POLLING=force npm run dev`. This removes the webhook, and `npm run deploy` puts it back.
 
 ## Run locally
 
-Requirements: Node.js 22+.
+You need Node.js 22 or newer.
 
 ```bash
 npm install
-cp .env.example .env   # then paste your bot token from @BotFather into BOT_TOKEN
-npm run dev            # API on :8787 + bot via long polling + reminders every minute
+cp .env.example .env   # paste your bot token from @BotFather into BOT_TOKEN
+npm run dev            # API on port 8787, plus the bot and reminders
 ```
 
-Data is kept in `.data/db.json` (git-ignored).
+Data is saved to `.data/db.json`.
 
-Run the Mini App in a browser (in a second terminal):
+In a second terminal, start the Mini App:
 
 ```bash
 npm run dev:web        # http://localhost:5173
 ```
 
-Outside Telegram there is no init data, so the Vite dev proxy signs API requests for `DEV_USER_ID` from `.env` — only for same-origin requests to `localhost` (see `apps/web/dev-proxy.ts`). Inside Telegram, use the deployed version (see Deploy); requests from anywhere but `localhost` must carry real Telegram data.
+Outside Telegram there's no login, so the dev server signs requests as the user from `DEV_USER_ID` in `.env`. It only does that on `localhost`. Anywhere else you need real Telegram data.
 
-Call the API before the Mini App exists:
+To call the API by hand:
 
 ```bash
-npm run initdata -w @habit/server -- <your Telegram id> Vlad   # prints an Authorization header
+npm run initdata -w @habit/server -- <your Telegram id> Alex   # prints a header to use
 curl -H "Authorization: tma ..." http://localhost:8787/api/v1/habits
 ```
 
@@ -92,53 +120,53 @@ curl -H "Authorization: tma ..." http://localhost:8787/api/v1/habits
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | all unit and integration tests (Vitest) |
-| `npm run coverage` | tests with coverage report |
-| `npm run typecheck` | TypeScript strict check |
-| `npm run dev` | local API + bot with reload |
-| `npm run dev:web` | Mini App dev server |
-| `npm run build -w @habit/web` | production build of the Mini App |
-| `npm run deploy` | deploy everything to Yandex Cloud |
+| `npm test` | runs all tests |
+| `npm run coverage` | tests plus a coverage report |
+| `npm run typecheck` | checks types |
+| `npm run dev` | local API and bot, restarts on changes |
+| `npm run dev:web` | the Mini App on localhost |
+| `npm run build -w @habit/web` | builds the Mini App |
+| `npm run deploy` | puts everything on Yandex Cloud |
+| `npm run demo-data` | makes demo people and history in `.data/demo.json` |
+| `npm run screenshots` | takes the screenshots above (steps in `scripts/screenshots.ts`) |
 
 ## API
 
-All routes live under `/api/v1` and need `Authorization: tma <Telegram.WebApp.initData>`; the signature is verified with the bot token (HMAC-SHA256, `WebAppData` key) and expires after 24 h.
+Everything is under `/api/v1`. Each request needs `Authorization: tma <Telegram.WebApp.initData>`. The server checks Telegram's signature with the bot token, and it's good for 24 hours.
 
-Responses are `{ "data": ... }`; errors are `{ "error": { "code", "message" } }` with 400/401/403/404/409/413/422/429.
+Answers look like `{ "data": ... }`, errors like `{ "error": { "code", "message" } }`.
 
-| Method | Path | |
+| Method | Path | What it does |
 | --- | --- | --- |
-| POST | `/session` | start a session, report the browser time zone; returns the parsed `start_param` deep link and, for invites, a preview |
-| GET / PATCH | `/me` | profile and settings |
-| GET / POST | `/habits` | my habits (`?archived=true`) / create |
-| GET / PATCH | `/habits/:id` | view / edit (owner) |
+| POST | `/session` | opens the app, saves your time zone, tells the app which screen a link should open |
+| GET / PATCH | `/me` | your profile and settings |
+| GET / POST | `/habits` | your habits (`?archived=true` for the archive) / new habit |
+| GET / PATCH | `/habits/:id` | one habit / edit it (owner) |
 | POST | `/habits/:id/archive`, `/unarchive`, `/transfer` | owner actions |
-| PATCH / DELETE | `/habits/:id/membership` | my reminder & notifications / leave |
-| DELETE | `/habits/:id/members/:userId` | remove a member (owner) |
-| GET | `/habits/:id/checks?from&to` | heatmap data |
-| PUT / DELETE | `/habits/:id/checks/:date` | check / uncheck a day |
-| GET / POST | `/invite-link`, `/invite-link/reset` | friend link |
-| GET / POST | `/habits/:id/invite-link`, `/reset` | habit link (owner) |
-| GET | `/invites/:token` | invite preview: who invites, which habit, what joining would do |
-| POST | `/invites/:token/requests` | join: send the request (201) or report why not (200) |
-| POST | `/habits/:id/invites` | invite a friend directly |
-| GET | `/requests` | incoming requests |
+| PATCH / DELETE | `/habits/:id/membership` | your reminder and notifications / leave |
+| DELETE | `/habits/:id/members/:userId` | remove someone (owner) |
+| GET | `/habits/:id/checks?from&to` | days for the heatmap |
+| PUT / DELETE | `/habits/:id/checks/:date` | check or uncheck a day |
+| GET / POST | `/invite-link`, `/invite-link/reset` | your friend link |
+| GET / POST | `/habits/:id/invite-link`, `/reset` | a habit link (owner) |
+| GET | `/invites/:token` | what an invite is: who sent it, which habit |
+| POST | `/invites/:token/requests` | ask to join |
+| POST | `/habits/:id/invites` | invite a friend straight into a habit |
+| GET | `/requests` | requests waiting for you |
 | POST | `/requests/:id/approve`, `/decline` | answer a request |
-| GET / DELETE | `/friends`, `/friends/:userId` | friends with shared-habit counts |
-| GET | `/feed?before&limit` | friends' activity, cursor pagination |
+| GET / DELETE | `/friends`, `/friends/:userId` | your friends / remove one |
+| GET | `/feed?before&limit` | what friends have been up to, page by page |
 
 ## Deep links
 
-Links into the Mini App use one format, shared by `startapp` links and the `open` query of the bot's *Open* buttons (`packages/core/src/deep-links.ts`):
+The same short codes open a screen from an invite link (`startapp`) or from the bot's Open button:
 
-| Value | Screen |
+| Code | Opens |
 | --- | --- |
-| `i_<token>` | invite preview |
-| `h_<habitId>` | habit |
+| `i_<token>` | an invite |
+| `h_<habitId>` | a habit |
 | `requests`, `feed`, `home` | that tab |
-
-Invite links look like `https://t.me/<bot>?startapp=i_<token>`; they need the bot's **Main Mini App** configured in @BotFather (Bot Settings → Configure Mini App).
 
 ## Tech
 
-TypeScript (strict), Node.js 22, [grammY](https://grammy.dev), [Hono](https://hono.dev), Zod, Vitest; React 19, Vite, Tailwind v4, Motion, TanStack Query; Yandex Cloud Functions, API Gateway, Object Storage; Cloudflare Workers.
+TypeScript, Node.js 22, React 19, Vite, Tailwind, Motion, TanStack Query, [grammY](https://grammy.dev), [Hono](https://hono.dev), Zod, Vitest, Playwright. Hosting: Yandex Cloud Functions, API Gateway, Object Storage, plus a Cloudflare Worker.
