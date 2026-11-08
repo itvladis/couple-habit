@@ -8,11 +8,14 @@ import { dayMonth, feedDayLabel, localDateOf, timeOf } from '../lib/format';
 import { useI18n, type Dict } from '../lib/i18n';
 import { useFeed, useMe } from '../lib/queries';
 
-/** Neutral wording: the app does not know anyone's gender. */
-function describe(item: FeedItem, today: string, t: Dict): string {
+/**
+ * Neutral wording: the app does not know anyone's gender.
+ * @param eventDay the day the event happened (its feed group); a check names its day only when made for an earlier one
+ */
+export function feedText(item: FeedItem, eventDay: string, t: Dict): string {
   switch (item.type) {
     case 'check':
-      return item.date === today || item.date === null ? t.feed.checkToday : t.feed.checkDate(dayMonth(item.date, t.locale));
+      return item.date === eventDay || item.date === null ? t.feed.check : t.feed.checkDate(dayMonth(item.date, t.locale));
     case 'habit_created':
       return t.feed.created;
     case 'habit_joined':
@@ -62,7 +65,7 @@ export function FeedScreen() {
                           {timeOf(item.createdAt, me.timeZone, t.locale)}
                         </time>
                       </div>
-                      <p className="text-[14px] text-ink-2">{describe(item, today, t)}</p>
+                      <p className="text-[14px] text-ink-2">{feedText(item, g.day, t)}</p>
                       {item.habit && (
                         <span
                           className="inline-flex w-fit max-w-full items-center gap-1 rounded-lg py-[3px] pr-2 pl-1.5 text-[13px] font-medium"
